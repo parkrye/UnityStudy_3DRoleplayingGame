@@ -9,7 +9,7 @@ public class PlayerMover : MonoBehaviour
     Animator animator;
     Vector3 moveDir;
 
-    [SerializeField] float walkSpeed, runSpeed, currentSpeed, jumpSpeed, ySpeed;
+    [SerializeField] float walkSpeed, runSpeed, currentSpeed, jumpSpeed, ySpeed, walkSoundRange, runSoundRange, lastStepTime;
     [SerializeField] bool walk;
 
     void Awake()
@@ -27,7 +27,6 @@ public class PlayerMover : MonoBehaviour
 
     void Move()
     {
-
         if (moveDir.magnitude == 0f)
         {
             currentSpeed = Mathf.Lerp(currentSpeed, 0f, 0.1f);
@@ -58,6 +57,29 @@ public class PlayerMover : MonoBehaviour
 
         Quaternion lookRotation = Quaternion.LookRotation(fowardVec * moveDir.z + rightVec * moveDir.x);
         transform.rotation = Quaternion.Lerp(lookRotation, transform.rotation, 0.2f);
+
+        lastStepTime -= Time.deltaTime;
+        if(lastStepTime < 0)
+        {
+            lastStepTime = 0.1f;
+            GenerateFootStepSound();
+        }
+    }
+
+    void GenerateFootStepSound()
+    {
+        Collider[] colliders = Physics.OverlapSphere(transform.position, walk ? walkSoundRange : runSoundRange);
+        foreach(Collider collider in colliders)
+        {
+            IHearable hearable = collider.GetComponent<IHearable>();
+            hearable?.Hear(transform);
+        }
+    }
+
+    void OnDrawGizmos()
+    {
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(transform.position, walk ? walkSoundRange : runSoundRange);
     }
 
     void Jump()
